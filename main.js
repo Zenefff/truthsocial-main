@@ -128,7 +128,7 @@ const renderHistory = (payload) => {
   historyEmpty.textContent = "No posts in the last 24 hours.";
   historyEmpty.hidden = hasRecent;
   const maxCount = Math.max(...recent.map((entry) => entry.count), 1);
-  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, 1fr)`;
+  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, minmax(0, 1fr))`;
 
   for (const entry of recent) {
     const bar = document.createElement("div");

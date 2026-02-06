@@ -212,6 +212,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-x: hidden;
 }
 
 .chart-grid {
@@ -223,6 +224,10 @@ h1 {
   padding: 12px 12px 30px;
   background: #f1f5f9;
   border-radius: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .chart-empty {
@@ -238,6 +243,7 @@ h1 {
   background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 100%);
   height: var(--value);
   min-height: 10px;
+  min-width: 0;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -260,9 +266,11 @@ h1 {
 }
 
 .bar-count {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(15, 23, 42, 0.45);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .chart-legend {
