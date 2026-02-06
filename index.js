@@ -91,6 +91,48 @@ function parseStatusList(payload) {
     .filter(Boolean);
 }
 
+function extractNumericId(value) {
+  if (!value) return "";
+  const match = String(value).match(/\/(\d+)(?:\b|$)/);
+  return match ? match[1] : "";
+}
+
+function canonicalId(post) {
+  if (!post) return "";
+  const direct = post.id ? String(post.id) : "";
+  if (direct && /^\d+$/.test(direct)) return direct;
+  const fromDirect = extractNumericId(direct);
+  if (fromDirect) return fromDirect;
+  const fromUrl = extractNumericId(post.url || post.uri);
+  if (fromUrl) return fromUrl;
+  return direct || String(post.url || post.uri || "");
+}
+
+function normalizePosts(posts) {
+  const byId = new Map();
+  for (const post of posts) {
+    const id = canonicalId(post);
+    if (!id) continue;
+    const normalized = { ...post, id };
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, normalized);
+      continue;
+    }
+    const merged = { ...existing };
+    const existingTime = Date.parse(existing.timestamp);
+    const incomingTime = Date.parse(normalized.timestamp);
+    if (!Number.isNaN(incomingTime) && (Number.isNaN(existingTime) || incomingTime > existingTime)) {
+      merged.timestamp = normalized.timestamp;
+    }
+    if (!merged.url && normalized.url) merged.url = normalized.url;
+    if (!merged.uri && normalized.uri) merged.uri = normalized.uri;
+    if (!merged.content && normalized.content) merged.content = normalized.content;
+    byId.set(id, merged);
+  }
+  return Array.from(byId.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+}
+
 function parseLinkHeader(header) {
   if (!header) return {};
   return header.split(",").reduce((links, part) => {
@@ -117,8 +159,9 @@ function toHourKey(timestamp) {
 }
 
 function computeHourly(posts) {
+  const normalized = normalizePosts(posts);
   const buckets = new Map();
-  for (const post of posts) {
+  for (const post of normalized) {
     const hourKey = toHourKey(post.timestamp);
     buckets.set(hourKey, (buckets.get(hourKey) || 0) + 1);
   }
@@ -128,8 +171,9 @@ function computeHourly(posts) {
 }
 
 function computeLatest(posts) {
-  if (!posts.length) return null;
-  return posts.reduce((latest, post) => {
+  const normalized = normalizePosts(posts);
+  if (!normalized.length) return null;
+  return normalized.reduce((latest, post) => {
     if (!latest) return post;
     return new Date(post.timestamp) > new Date(latest.timestamp) ? post : latest;
   }, null);
@@ -200,15 +244,7 @@ async function pollFeed() {
       return;
     }
     const data = await loadData();
-    const seen = new Set(data.posts.map((post) => post.id));
-    const merged = [...data.posts];
-    for (const post of incoming) {
-      if (!seen.has(post.id)) {
-        merged.push(post);
-        seen.add(post.id);
-      }
-    }
-    merged.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const merged = normalizePosts([...data.posts, ...incoming]);
     await saveData({ posts: merged });
   } catch (error) {
     console.error("Failed to poll Truth Social feed", error);
@@ -230,9 +266,10 @@ async function ensureSeeded() {
 app.get("/latest", async (_request, response) => {
   const data = await ensureSeeded();
   const latest = computeLatest(data.posts);
+  const total = normalizePosts(data.posts).length;
   response.json({
     latest,
-    totalPosts: data.posts.length,
+    totalPosts: total,
     polledAt: new Date().toISOString(),
   });
 });
@@ -246,7 +283,7 @@ app.get("/history/hourly", async (_request, response) => {
 
 app.get("/posts", async (_request, response) => {
   const data = await loadData();
-  response.json({ posts: data.posts });
+  response.json({ posts: normalizePosts(data.posts) });
 });
 
 app.listen(PORT, () => {
