@@ -1,5 +1,4 @@
 const updateStatus = document.getElementById("update-status");
-const updateCountdown = document.getElementById("update-countdown");
 const postCounter = document.getElementById("post-counter");
 const postCounterLabel = document.getElementById("post-counter-label");
 const latestTimestamp = document.getElementById("latest-timestamp");
@@ -13,7 +12,6 @@ const historyList = document.getElementById("history-list");
 
 const API_BASE = window.API_BASE_URL || "http://localhost:3000";
 const POLL_INTERVAL_MS = 45000;
-const COUNTDOWN_TICK_MS = 1000;
 const COUNT_START_LOCAL = new Date(2026, 1, 6, 18, 0, 0);
 const COUNT_END_LOCAL = new Date(2026, 1, 13, 18, 0, 0);
 
@@ -65,19 +63,6 @@ const stripHtml = (html) => {
   return doc.body.textContent?.trim() || "";
 };
 
-const formatCountdown = (ms) => {
-  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${minutes}:${seconds}`;
-};
-
-let nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
-
-const updateCountdownLabel = () => {
-  if (!updateCountdown) return;
-  updateCountdown.textContent = `Refresh in ${formatCountdown(nextRefreshAt - Date.now())}`;
-};
 
 const updatePostCounter = (hours) => {
   if (!postCounter) return;
@@ -194,13 +179,15 @@ const fetchHistory = async () => {
 };
 
 const refresh = async () => {
-  nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
-  updateCountdownLabel();
   try {
     const [latest, history] = await Promise.all([fetchLatest(), fetchHistory()]);
     renderLatest(latest);
     renderHistory(history);
-    setStatus(`Updated ${formatTime(latest.polledAt)}`);
+    if (latest.polledAt) {
+      setStatus(`Updated ${formatTime(latest.polledAt)}`);
+    } else {
+      setStatus("Awaiting poll");
+    }
   } catch (error) {
     console.error(error);
     setStatus("Backend unavailable");
@@ -209,5 +196,3 @@ const refresh = async () => {
 
 refresh();
 setInterval(refresh, POLL_INTERVAL_MS);
-updateCountdownLabel();
-setInterval(updateCountdownLabel, COUNTDOWN_TICK_MS);

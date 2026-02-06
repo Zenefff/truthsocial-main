@@ -20,6 +20,7 @@ const HISTORY_WINDOW_HOURS = Number.parseInt(process.env.HISTORY_WINDOW_HOURS ||
 const MAX_STATUS_PAGES = Number.parseInt(process.env.TRUTHSOCIAL_MAX_PAGES || "5", 10);
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 let lastSeedAttempt = 0;
+let lastPollAt = null;
 
 const app = express();
 app.use(cors());
@@ -240,12 +241,12 @@ async function pollFeed() {
         incoming = parseFeed(body);
       }
     }
-    if (!incoming.length) {
-      return;
+    if (incoming.length) {
+      const data = await loadData();
+      const merged = normalizePosts([...data.posts, ...incoming]);
+      await saveData({ posts: merged });
     }
-    const data = await loadData();
-    const merged = normalizePosts([...data.posts, ...incoming]);
-    await saveData({ posts: merged });
+    lastPollAt = new Date().toISOString();
   } catch (error) {
     console.error("Failed to poll Truth Social feed", error);
   }
@@ -270,7 +271,7 @@ app.get("/latest", async (_request, response) => {
   response.json({
     latest,
     totalPosts: total,
-    polledAt: new Date().toISOString(),
+    polledAt: lastPollAt || null,
   });
 });
 
