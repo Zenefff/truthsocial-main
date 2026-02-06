@@ -80,11 +80,13 @@ function parseStatusList(payload) {
   return payload
     .map((item) => {
       const timestamp = item?.created_at;
-      const id = item?.url || item?.uri || item?.id;
+      const id = item?.id || item?.url || item?.uri;
+      const url = item?.url || item?.uri || "";
+      const content = item?.content || "";
       if (!timestamp || !id) return null;
       const iso = new Date(timestamp).toISOString();
       if (Number.isNaN(Date.parse(iso))) return null;
-      return { id: String(id), timestamp: iso };
+      return { id: String(id), timestamp: iso, url, content };
     })
     .filter(Boolean);
 }

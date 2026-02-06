@@ -151,6 +151,16 @@ h1 {
   margin-bottom: 10px;
 }
 
+.engagement-value a {
+  color: #1d4ed8;
+  text-decoration: none;
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .post-body {
   margin: 18px 0 20px;
   color: #475569;

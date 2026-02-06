@@ -45,6 +45,12 @@ const setStatus = (label) => {
   updateStatus.textContent = label;
 };
 
+const stripHtml = (html) => {
+  if (!html) return "";
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.trim() || "";
+};
+
 const formatCountdown = (ms) => {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
   const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -71,16 +77,27 @@ const renderLatest = (payload) => {
   }
 
   const latest = payload.latest;
+  const postUrl =
+    latest.url ||
+    (typeof latest.id === "string" && latest.id.startsWith("http")
+      ? latest.id
+      : `https://truthsocial.com/@realDonaldTrump/${latest.id}`);
+  const contentText = stripHtml(latest.content);
   latestTimestamp.textContent = `As of ${formatTime(latest.timestamp)}`;
   latestHeadline.textContent = "Latest Truth Social post";
-  latestBody.textContent = `Tracking post timestamps every polling cycle. Last capture at ${formatTime(
-    latest.timestamp
-  )}.`;
-  latestId.textContent = latest.id;
+  latestBody.textContent =
+    contentText ||
+    `Tracking post timestamps every polling cycle. Last capture at ${formatTime(
+      latest.timestamp
+    )}.`;
+  const idLink = document.createElement("a");
+  idLink.href = postUrl;
+  idLink.target = "_blank";
+  idLink.rel = "noreferrer";
+  idLink.textContent = "Open post";
+  latestId.replaceChildren(idLink);
   latestTotal.textContent = payload.totalPosts;
-  latestLink.href = latest.id.startsWith("http")
-    ? latest.id
-    : "https://truthsocial.com/@realDonaldTrump";
+  latestLink.href = postUrl;
 };
 
 const renderHistory = (payload) => {
