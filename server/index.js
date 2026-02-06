@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, "data", "posts.json");
 const FEED_URL =
   process.env.TRUTHSOCIAL_FEED_URL || "https://truthsocial.com/@realDonaldTrump.rss";
-const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "300000", 10);
+const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "30000", 10);
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 
 const app = express();

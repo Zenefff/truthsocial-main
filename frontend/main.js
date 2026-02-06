@@ -9,7 +9,7 @@ const historyChart = document.getElementById("history-chart");
 const historyEmpty = document.getElementById("history-empty");
 
 const API_BASE = window.API_BASE_URL || "http://localhost:3000";
-const POLL_INTERVAL_MS = 60000;
+const POLL_INTERVAL_MS = 30000;
 
 const formatTime = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
