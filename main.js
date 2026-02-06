@@ -1,5 +1,7 @@
 const updateStatus = document.getElementById("update-status");
 const updateCountdown = document.getElementById("update-countdown");
+const postCounter = document.getElementById("post-counter");
+const postCounterLabel = document.getElementById("post-counter-label");
 const latestTimestamp = document.getElementById("latest-timestamp");
 const latestHeadline = document.getElementById("latest-headline");
 const latestBody = document.getElementById("latest-body");
@@ -13,6 +15,7 @@ const historyList = document.getElementById("history-list");
 const API_BASE = window.API_BASE_URL || "http://localhost:3000";
 const POLL_INTERVAL_MS = 45000;
 const COUNTDOWN_TICK_MS = 1000;
+const COUNT_START_LOCAL = new Date(2026, 1, 6, 18, 0, 0);
 
 const formatTime = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], {
@@ -65,6 +68,29 @@ const updateCountdownLabel = () => {
   updateCountdown.textContent = `Refresh in ${formatCountdown(nextRefreshAt - Date.now())}`;
 };
 
+const updatePostCounter = (hours) => {
+  if (!postCounter) return;
+  const cutoff = COUNT_START_LOCAL.getTime();
+  const total = (hours || []).reduce((sum, entry) => {
+    const entryTime = Date.parse(entry.hour);
+    if (!Number.isNaN(entryTime) && entryTime >= cutoff) {
+      return sum + entry.count;
+    }
+    return sum;
+  }, 0);
+  postCounter.textContent = total.toString();
+  if (postCounterLabel) {
+    const label = COUNT_START_LOCAL.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    postCounterLabel.textContent = `Since ${label}`;
+  }
+};
+
 const renderLatest = (payload) => {
   if (!payload?.latest) {
     latestTimestamp.textContent = "Awaiting first poll";
@@ -110,6 +136,8 @@ const renderHistory = (payload) => {
     const hourKey = toUtcHourKey(date);
     return { hour: hourKey, count: hourMap.get(hourKey) || 0 };
   });
+
+  updatePostCounter(hours);
 
   const hasRecent = recent.some((entry) => entry.count > 0);
   historyEmpty.textContent = "No posts in the last 24 hours.";
