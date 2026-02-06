@@ -1,4 +1,5 @@
 const updateStatus = document.getElementById("update-status");
+const updateCountdown = document.getElementById("update-countdown");
 const latestTimestamp = document.getElementById("latest-timestamp");
 const latestHeadline = document.getElementById("latest-headline");
 const latestBody = document.getElementById("latest-body");
@@ -10,10 +11,16 @@ const historyEmpty = document.getElementById("history-empty");
 const historyList = document.getElementById("history-list");
 
 const API_BASE = window.API_BASE_URL || "http://localhost:3000";
-const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 45000;
+const COUNTDOWN_TICK_MS = 1000;
 
 const formatTime = (timestamp) =>
-  new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  new Date(timestamp).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 
 const formatHour = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", hour12: false });
@@ -36,6 +43,20 @@ const getLastHours = (count) => {
 
 const setStatus = (label) => {
   updateStatus.textContent = label;
+};
+
+const formatCountdown = (ms) => {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+};
+
+let nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
+
+const updateCountdownLabel = () => {
+  if (!updateCountdown) return;
+  updateCountdown.textContent = `Refresh in ${formatCountdown(nextRefreshAt - Date.now())}`;
 };
 
 const renderLatest = (payload) => {
@@ -68,13 +89,13 @@ const renderHistory = (payload) => {
   const hours = payload?.hours || [];
   const hourMap = new Map(hours.map((entry) => [entry.hour, entry.count]));
 
-  const recent = getLastHours(12).map((date) => {
+  const recent = getLastHours(24).map((date) => {
     const hourKey = toUtcHourKey(date);
     return { hour: hourKey, count: hourMap.get(hourKey) || 0 };
   });
 
   const hasRecent = recent.some((entry) => entry.count > 0);
-  historyEmpty.textContent = "No posts in the last 12 hours.";
+  historyEmpty.textContent = "No posts in the last 24 hours.";
   historyEmpty.hidden = hasRecent;
   const maxCount = Math.max(...recent.map((entry) => entry.count), 1);
   historyChart.style.gridTemplateColumns = `repeat(${recent.length}, 1fr)`;
@@ -93,7 +114,10 @@ const renderHistory = (payload) => {
 
     bar.append(label, count);
     historyChart.append(bar);
+  }
 
+  const listEntries = [...recent].reverse();
+  for (const entry of listEntries) {
     const row = document.createElement("div");
     row.className = "hour-row";
 
@@ -125,6 +149,8 @@ const fetchHistory = async () => {
 };
 
 const refresh = async () => {
+  nextRefreshAt = Date.now() + POLL_INTERVAL_MS;
+  updateCountdownLabel();
   try {
     const [latest, history] = await Promise.all([fetchLatest(), fetchHistory()]);
     renderLatest(latest);
@@ -138,3 +164,5 @@ const refresh = async () => {
 
 refresh();
 setInterval(refresh, POLL_INTERVAL_MS);
+updateCountdownLabel();
+setInterval(updateCountdownLabel, COUNTDOWN_TICK_MS);

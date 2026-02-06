@@ -15,9 +15,9 @@ const SOURCE_URL =
   process.env.TRUTHSOCIAL_API_URL ||
   process.env.TRUTHSOCIAL_FEED_URL ||
   DEFAULT_API_URL;
-const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "30000", 10);
-const HISTORY_WINDOW_HOURS = Number.parseInt(process.env.HISTORY_WINDOW_HOURS || "12", 10);
-const MAX_STATUS_PAGES = Number.parseInt(process.env.TRUTHSOCIAL_MAX_PAGES || "3", 10);
+const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "45000", 10);
+const HISTORY_WINDOW_HOURS = Number.parseInt(process.env.HISTORY_WINDOW_HOURS || "24", 10);
+const MAX_STATUS_PAGES = Number.parseInt(process.env.TRUTHSOCIAL_MAX_PAGES || "5", 10);
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 let lastSeedAttempt = 0;
 

@@ -76,10 +76,20 @@ h1 {
   font-weight: 600;
 }
 
+.updates-indicator .subvalue {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
 .content {
   display: grid;
   gap: 24px;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.history {
+  grid-column: span 2;
 }
 
 .panel {
@@ -204,13 +214,15 @@ h1 {
 
 .bar span {
   transform: translateY(24px);
-  color: #475569;
-  font-size: 10px;
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .bar-count {
   font-size: 11px;
   font-weight: 600;
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.45);
 }
 
 .chart-legend {
@@ -268,5 +280,9 @@ h1 {
 
   .engagement {
     text-align: left;
+  }
+
+  .history {
+    grid-column: auto;
   }
 }
