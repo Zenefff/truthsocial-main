@@ -99,6 +99,7 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #64748b;
+  line-height: 1.3;
 }
 
 .counter-value {
@@ -222,6 +223,9 @@ h1 {
   padding: 12px 12px 30px;
   background: #f1f5f9;
   border-radius: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
 }
 
 .chart-empty {
@@ -237,6 +241,7 @@ h1 {
   background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 100%);
   height: var(--value);
   min-height: 10px;
+  min-width: 24px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -323,5 +328,61 @@ h1 {
 
   .history {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 32px 16px 56px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .panel {
+    padding: 20px;
+  }
+
+  .updates-indicator {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .counter-badge {
+    flex: 1 1 100%;
+    text-align: left;
+  }
+
+  .chart-grid {
+    gap: 8px;
+    min-height: 190px;
+  }
+
+  .bar span {
+    font-size: 10px;
+    bottom: -16px;
+  }
+
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hourly-list {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .updates-indicator {
+    padding: 12px 14px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 }

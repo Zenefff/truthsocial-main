@@ -16,6 +16,7 @@ const API_BASE = window.API_BASE_URL || "http://localhost:3000";
 const POLL_INTERVAL_MS = 45000;
 const COUNTDOWN_TICK_MS = 1000;
 const COUNT_START_LOCAL = new Date(2026, 1, 6, 18, 0, 0);
+const COUNT_END_LOCAL = new Date(2026, 1, 13, 18, 0, 0);
 
 const formatTime = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], {
@@ -70,25 +71,16 @@ const updateCountdownLabel = () => {
 
 const updatePostCounter = (hours) => {
   if (!postCounter) return;
-  const cutoff = COUNT_START_LOCAL.getTime();
+  const start = COUNT_START_LOCAL.getTime();
+  const end = COUNT_END_LOCAL.getTime();
   const total = (hours || []).reduce((sum, entry) => {
     const entryTime = Date.parse(entry.hour);
-    if (!Number.isNaN(entryTime) && entryTime >= cutoff) {
+    if (!Number.isNaN(entryTime) && entryTime >= start && entryTime <= end) {
       return sum + entry.count;
     }
     return sum;
   }, 0);
   postCounter.textContent = total.toString();
-  if (postCounterLabel) {
-    const label = COUNT_START_LOCAL.toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-    postCounterLabel.textContent = `Since ${label}`;
-  }
 };
 
 const renderLatest = (payload) => {
@@ -143,7 +135,7 @@ const renderHistory = (payload) => {
   historyEmpty.textContent = "No posts in the last 24 hours.";
   historyEmpty.hidden = hasRecent;
   const maxCount = Math.max(...recent.map((entry) => entry.count), 1);
-  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, 1fr)`;
+  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, minmax(24px, 1fr))`;
 
   for (const entry of recent) {
     const bar = document.createElement("div");
