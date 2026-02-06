@@ -190,6 +190,7 @@ h1 {
   position: relative;
   background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 100%);
   height: var(--value);
+  min-height: 10px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -218,6 +219,27 @@ h1 {
   align-items: center;
   font-size: 13px;
   color: #64748b;
+}
+
+.hourly-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hour-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.hour-row strong {
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .legend-metric {

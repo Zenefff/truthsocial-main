@@ -7,6 +7,7 @@ const latestTotal = document.getElementById("latest-total");
 const latestLink = document.getElementById("latest-link");
 const historyChart = document.getElementById("history-chart");
 const historyEmpty = document.getElementById("history-empty");
+const historyList = document.getElementById("history-list");
 
 const API_BASE = window.API_BASE_URL || "http://localhost:3000";
 const POLL_INTERVAL_MS = 30000;
@@ -16,6 +17,22 @@ const formatTime = (timestamp) =>
 
 const formatHour = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], { hour: "numeric" }).toLowerCase();
+
+const toUtcHourKey = (date) => {
+  const utc = new Date(date);
+  utc.setUTCMinutes(0, 0, 0);
+  return utc.toISOString();
+};
+
+const getLastHours = (count) => {
+  const now = new Date();
+  now.setUTCMinutes(0, 0, 0);
+  const hours = [];
+  for (let i = count - 1; i >= 0; i -= 1) {
+    hours.push(new Date(now.getTime() - i * 60 * 60 * 1000));
+  }
+  return hours;
+};
 
 const setStatus = (label) => {
   updateStatus.textContent = label;
@@ -47,14 +64,18 @@ const renderLatest = (payload) => {
 
 const renderHistory = (payload) => {
   historyChart.innerHTML = "";
+  historyList.innerHTML = "";
   const hours = payload?.hours || [];
-  if (!hours.length) {
-    historyEmpty.hidden = false;
-    return;
-  }
+  const hourMap = new Map(hours.map((entry) => [entry.hour, entry.count]));
 
-  historyEmpty.hidden = true;
-  const recent = hours.slice(-12);
+  const recent = getLastHours(12).map((date) => {
+    const hourKey = toUtcHourKey(date);
+    return { hour: hourKey, count: hourMap.get(hourKey) || 0 };
+  });
+
+  const hasRecent = recent.some((entry) => entry.count > 0);
+  historyEmpty.textContent = "No posts in the last 12 hours.";
+  historyEmpty.hidden = hasRecent;
   const maxCount = Math.max(...recent.map((entry) => entry.count), 1);
   historyChart.style.gridTemplateColumns = `repeat(${recent.length}, 1fr)`;
 
@@ -72,6 +93,18 @@ const renderHistory = (payload) => {
 
     bar.append(label, count);
     historyChart.append(bar);
+
+    const row = document.createElement("div");
+    row.className = "hour-row";
+
+    const rowLabel = document.createElement("span");
+    rowLabel.textContent = formatHour(entry.hour);
+
+    const rowCount = document.createElement("strong");
+    rowCount.textContent = `${entry.count} ${entry.count === 1 ? "post" : "posts"}`;
+
+    row.append(rowLabel, rowCount);
+    historyList.append(row);
   }
 };
 
