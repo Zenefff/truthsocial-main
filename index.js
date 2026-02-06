@@ -12,6 +12,7 @@ const FEED_URL =
   process.env.TRUTHSOCIAL_FEED_URL || "https://truthsocial.com/@realDonaldTrump.rss";
 const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "30000", 10);
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
+let lastSeedAttempt = 0;
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,7 @@ async function loadData() {
 }
 
 async function saveData(data) {
+  await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
   await fs.writeFile(DATA_PATH, JSON.stringify(data, null, 2));
 }
 
@@ -125,8 +127,20 @@ async function pollFeed() {
   }
 }
 
-app.get("/latest", async (_request, response) => {
+async function ensureSeeded() {
   const data = await loadData();
+  if (data.posts.length) return data;
+  const now = Date.now();
+  if (now - lastSeedAttempt < POLL_INTERVAL_MS) {
+    return data;
+  }
+  lastSeedAttempt = now;
+  await pollFeed();
+  return loadData();
+}
+
+app.get("/latest", async (_request, response) => {
+  const data = await ensureSeeded();
   const latest = computeLatest(data.posts);
   response.json({
     latest,
@@ -136,7 +150,7 @@ app.get("/latest", async (_request, response) => {
 });
 
 app.get("/history/hourly", async (_request, response) => {
-  const data = await loadData();
+  const data = await ensureSeeded();
   response.json({
     hours: computeHourly(data.posts),
   });

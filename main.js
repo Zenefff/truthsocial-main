@@ -13,10 +13,10 @@ const API_BASE = window.API_BASE_URL || "http://localhost:3000";
 const POLL_INTERVAL_MS = 30000;
 
 const formatTime = (timestamp) =>
-  new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 
 const formatHour = (timestamp) =>
-  new Date(timestamp).toLocaleTimeString([], { hour: "numeric" }).toLowerCase();
+  new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", hour12: false });
 
 const toUtcHourKey = (date) => {
   const utc = new Date(date);
