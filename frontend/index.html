@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TruthSocial Pulse</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top-bar">
+        <div>
+          <p class="eyebrow">TruthSocial Insights</p>
+          <h1>Community Pulse</h1>
+        </div>
+        <div class="updates-indicator">
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <p class="label">Updates</p>
+            <p class="value" id="update-status">Refreshing now</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="panel latest-post">
+          <div class="panel-header">
+            <h2>Latest Post</h2>
+            <span class="timestamp" id="latest-timestamp">Just now</span>
+          </div>
+          <div class="post-meta">
+            <div>
+              <p class="author" id="latest-author">@realDonaldTrump</p>
+              <p class="headline" id="latest-headline">Waiting for the latest post</p>
+            </div>
+            <div class="engagement">
+              <p>Post ID</p>
+              <p class="engagement-value" id="latest-id">--</p>
+              <p>Total tracked</p>
+              <p class="engagement-value" id="latest-total">0</p>
+            </div>
+          </div>
+          <p class="post-body" id="latest-body">
+            The service will refresh every few minutes to capture Truth Social updates and roll them
+            into hourly totals.
+          </p>
+          <a class="primary" id="latest-link" href="https://truthsocial.com/@realDonaldTrump" target="_blank" rel="noreferrer">
+            View on Truth Social
+          </a>
+        </section>
+
+        <section class="panel history">
+          <div class="panel-header">
+            <h2>Hourly History</h2>
+            <span class="timestamp">Last 12 hours</span>
+          </div>
+          <div class="chart" role="img" aria-label="Hourly history chart showing post counts">
+            <div class="chart-grid" id="history-chart"></div>
+            <p class="chart-empty" id="history-empty">No hourly history yet.</p>
+            <div class="chart-legend">
+              <p>Post activity per hour</p>
+              <p class="legend-metric"><span class="legend-dot"></span>Posts tracked</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
