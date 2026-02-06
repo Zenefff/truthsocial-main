@@ -8,9 +8,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_PATH = path.join(__dirname, "data", "posts.json");
-const FEED_URL =
-  process.env.TRUTHSOCIAL_FEED_URL || "https://truthsocial.com/@realDonaldTrump.rss";
+const DEFAULT_API_URL =
+  "https://truthsocial.com/api/v1/accounts/107780257626128497/statuses?exclude_replies=true&only_replies=false&with_muted=true";
+const SOURCE_URL =
+  process.env.TRUTHSOCIAL_SOURCE_URL ||
+  process.env.TRUTHSOCIAL_API_URL ||
+  process.env.TRUTHSOCIAL_FEED_URL ||
+  DEFAULT_API_URL;
 const POLL_INTERVAL_MS = Number.parseInt(process.env.POLL_INTERVAL_MS || "30000", 10);
+const HISTORY_WINDOW_HOURS = Number.parseInt(process.env.HISTORY_WINDOW_HOURS || "12", 10);
+const MAX_STATUS_PAGES = Number.parseInt(process.env.TRUTHSOCIAL_MAX_PAGES || "3", 10);
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 let lastSeedAttempt = 0;
 
@@ -68,6 +75,39 @@ function parseFeed(xml) {
   return items;
 }
 
+function parseStatusList(payload) {
+  if (!Array.isArray(payload)) return [];
+  return payload
+    .map((item) => {
+      const timestamp = item?.created_at;
+      const id = item?.url || item?.uri || item?.id;
+      if (!timestamp || !id) return null;
+      const iso = new Date(timestamp).toISOString();
+      if (Number.isNaN(Date.parse(iso))) return null;
+      return { id: String(id), timestamp: iso };
+    })
+    .filter(Boolean);
+}
+
+function parseLinkHeader(header) {
+  if (!header) return {};
+  return header.split(",").reduce((links, part) => {
+    const match = part.match(/<([^>]+)>;\s*rel="([^"]+)"/);
+    if (match) {
+      const [, url, rel] = match;
+      links[rel] = url;
+    }
+    return links;
+  }, {});
+}
+
+function shouldFetchMore(items) {
+  if (!items.length) return false;
+  const oldest = Math.min(...items.map((item) => Date.parse(item.timestamp)));
+  if (Number.isNaN(oldest)) return false;
+  return Date.now() - oldest < HISTORY_WINDOW_HOURS * 60 * 60 * 1000;
+}
+
 function toHourKey(timestamp) {
   const date = new Date(timestamp);
   date.setUTCMinutes(0, 0, 0);
@@ -93,21 +133,67 @@ function computeLatest(posts) {
   }, null);
 }
 
-async function pollFeed() {
-  try {
-    const response = await fetch(FEED_URL, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
-        Accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
+async function fetchStatusPages(headers) {
+  const collected = [];
+  let pageUrl = SOURCE_URL;
+  for (let page = 0; page < MAX_STATUS_PAGES && pageUrl; page += 1) {
+    const response = await fetch(pageUrl, { headers });
     if (!response.ok) {
       throw new Error(`Feed request failed: ${response.status}`);
     }
-    const xml = await response.text();
-    const incoming = parseFeed(xml);
+    const contentType = response.headers.get("content-type") || "";
+    const body = await response.text();
+    if (!contentType.includes("application/json")) {
+      throw new Error("Expected JSON response from Truth Social API");
+    }
+    let payload;
+    try {
+      payload = JSON.parse(body);
+    } catch (error) {
+      throw new Error("Failed to parse Truth Social JSON response");
+    }
+    const items = parseStatusList(payload);
+    if (!items.length) {
+      break;
+    }
+    collected.push(...items);
+    const linkHeader = response.headers.get("link");
+    const links = parseLinkHeader(linkHeader);
+    pageUrl = links.next;
+    if (!shouldFetchMore(collected)) {
+      break;
+    }
+  }
+  return collected;
+}
+
+async function pollFeed() {
+  try {
+    const headers = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+      Accept: "application/json, application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+    };
+    if (process.env.TRUTHSOCIAL_COOKIE) {
+      headers.Cookie = process.env.TRUTHSOCIAL_COOKIE;
+    }
+
+    let incoming = [];
+    if (SOURCE_URL.includes("/api/")) {
+      incoming = await fetchStatusPages(headers);
+    } else {
+      const response = await fetch(SOURCE_URL, { headers });
+      if (!response.ok) {
+        throw new Error(`Feed request failed: ${response.status}`);
+      }
+      const body = await response.text();
+      if (response.headers.get("content-type")?.includes("application/json")) {
+        incoming = parseStatusList(JSON.parse(body));
+      } else {
+        incoming = parseFeed(body);
+      }
+    }
     if (!incoming.length) {
       return;
     }
