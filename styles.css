@@ -217,15 +217,12 @@ h1 {
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 10px;
+  gap: 8px;
   align-items: end;
   min-height: 220px;
   padding: 12px 12px 30px;
   background: #f1f5f9;
   border-radius: 16px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-behavior: smooth;
 }
 
 .chart-empty {
@@ -241,7 +238,6 @@ h1 {
   background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 100%);
   height: var(--value);
   min-height: 10px;
-  min-width: 24px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -355,8 +351,8 @@ h1 {
   }
 
   .chart-grid {
-    gap: 8px;
-    min-height: 190px;
+    gap: 6px;
+    min-height: 180px;
   }
 
   .bar span {

@@ -6,7 +6,6 @@ const latestTimestamp = document.getElementById("latest-timestamp");
 const latestHeadline = document.getElementById("latest-headline");
 const latestBody = document.getElementById("latest-body");
 const latestId = document.getElementById("latest-id");
-const latestTotal = document.getElementById("latest-total");
 const latestLink = document.getElementById("latest-link");
 const historyChart = document.getElementById("history-chart");
 const historyEmpty = document.getElementById("history-empty");
@@ -28,6 +27,17 @@ const formatTime = (timestamp) =>
 
 const formatHour = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", hour12: false });
+
+const formatHourWithDate = (timestamp) => {
+  const date = new Date(timestamp);
+  const dateLabel = date.toLocaleDateString([], { month: "short", day: "2-digit" });
+  const timeLabel = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${dateLabel} ${timeLabel}`;
+};
 
 const toUtcHourKey = (date) => {
   const utc = new Date(date);
@@ -89,7 +99,6 @@ const renderLatest = (payload) => {
     latestHeadline.textContent = "No post data yet";
     latestBody.textContent = "Once the backend fetches the feed, the latest post will appear here.";
     latestId.textContent = "--";
-    latestTotal.textContent = payload?.totalPosts ?? 0;
     latestLink.href = "https://truthsocial.com/@realDonaldTrump";
     return;
   }
@@ -114,7 +123,6 @@ const renderLatest = (payload) => {
   idLink.rel = "noreferrer";
   idLink.textContent = "Open post";
   latestId.replaceChildren(idLink);
-  latestTotal.textContent = payload.totalPosts;
   latestLink.href = postUrl;
 };
 
@@ -135,7 +143,7 @@ const renderHistory = (payload) => {
   historyEmpty.textContent = "No posts in the last 24 hours.";
   historyEmpty.hidden = hasRecent;
   const maxCount = Math.max(...recent.map((entry) => entry.count), 1);
-  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, minmax(24px, 1fr))`;
+  historyChart.style.gridTemplateColumns = `repeat(${recent.length}, 1fr)`;
 
   for (const entry of recent) {
     const bar = document.createElement("div");
@@ -159,7 +167,7 @@ const renderHistory = (payload) => {
     row.className = "hour-row";
 
     const rowLabel = document.createElement("span");
-    rowLabel.textContent = formatHour(entry.hour);
+    rowLabel.textContent = formatHourWithDate(entry.hour);
 
     const rowCount = document.createElement("strong");
     rowCount.textContent = `${entry.count} ${entry.count === 1 ? "post" : "posts"}`;
