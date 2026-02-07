@@ -5,6 +5,8 @@ const DEFAULT_MONTHS = 6;
 const DEFAULT_LIMIT = 20;
 const DEFAULT_MAX_PAGES = 250;
 const DEFAULT_DELAY_MS = 750;
+const DEFAULT_BACKOFF_FACTOR = 1.5;
+const DEFAULT_MAX_DELAY_MS = 15000;
 
 const args = process.argv.slice(2);
 const getArg = (name, fallback) => {
@@ -20,6 +22,8 @@ const months = Number.parseInt(getArg("--months", String(DEFAULT_MONTHS)), 10);
 const outFile = getArg("--out", `truthsocial_${accountId}_${months}mo.csv`);
 const maxPages = Number.parseInt(getArg("--max-pages", String(DEFAULT_MAX_PAGES)), 10);
 const delayMs = Number.parseInt(getArg("--delay-ms", String(DEFAULT_DELAY_MS)), 10);
+const backoffFactor = Number.parseFloat(getArg("--backoff-factor", String(DEFAULT_BACKOFF_FACTOR)));
+const maxDelayMs = Number.parseInt(getArg("--max-delay-ms", String(DEFAULT_MAX_DELAY_MS)), 10);
 const includeReplies = hasFlag("--include-replies");
 const excludeReplies = hasFlag("--exclude-replies");
 
@@ -99,6 +103,7 @@ rows.push(
 let pageUrl = baseUrl;
 let page = 0;
 let seenIds = new Set();
+let currentDelay = delayMs;
 
 const withinRange = (createdAt) => {
   const timestamp = Date.parse(createdAt);
@@ -107,19 +112,24 @@ const withinRange = (createdAt) => {
 };
 
 while (pageUrl && page < maxPages) {
-  page += 1;
   const response = await fetch(pageUrl, { headers });
   if (!response.ok) {
     if (response.status === 429) {
       const retryAfter = Number.parseInt(response.headers.get("retry-after") || "0", 10);
-      const waitMs = Number.isNaN(retryAfter) || retryAfter <= 0 ? 5000 : retryAfter * 1000;
+      const retryAfterMs =
+        Number.isNaN(retryAfter) || retryAfter <= 0 ? 0 : retryAfter * 1000;
+      const waitMs = Math.max(currentDelay, retryAfterMs);
       console.warn(`429 rate limit. Waiting ${waitMs}ms before retrying...`);
       await sleep(waitMs);
+      const nextDelay = Math.ceil(currentDelay * (Number.isFinite(backoffFactor) ? backoffFactor : DEFAULT_BACKOFF_FACTOR));
+      currentDelay = Math.min(nextDelay, Number.isNaN(maxDelayMs) ? DEFAULT_MAX_DELAY_MS : maxDelayMs);
       continue;
     }
     throw new Error(`Request failed (${response.status}) for ${pageUrl}`);
   }
 
+  page += 1;
+  currentDelay = delayMs;
   const payload = await response.json();
   if (!Array.isArray(payload) || payload.length === 0) {
     break;
@@ -163,7 +173,9 @@ while (pageUrl && page < maxPages) {
     break;
   }
 
-  await sleep(delayMs);
+  if (currentDelay > 0) {
+    await sleep(currentDelay);
+  }
 }
 
 const fs = await import("node:fs/promises");
